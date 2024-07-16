@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Thinking about software performance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="node_modules/reveal.js/dist/reveal.css">
+    <link rel="stylesheet" href="node_modules/reveal.js/dist/theme/black.css">
+</head>
+<style>
+    @keyframes moveRight {
+        from {
+            transform: translateX(0);
+        }
+
+        to {
+            transform: translateX(300%);
+        }
+    }
+
+    .ball {
+        width: 25px;
+        height: 25px;
+        background-color: red;
+        border-radius: 50%;
+        position: relative;
+        /* Remove the animation property from here */
+        animation: moveRight 0.5s linear infinite;
+    }
+
+    .ball-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 110px;
+        /* Adjust based on the total width of the balls plus margin */
+    }
+
+    /* Add a new class for animation */
+    .animate-ball {
+        animation: moveRight 0.5s linear infinite;
+    }
+</style>
+
+<!-- <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("animate-ball");
+                    // Optional: Unobserve the ball if you want the animation to run only once
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 }); // Adjust threshold as needed
+
+        const ball = document.querySelector('.ball');
+        observer.observe(ball);
+    });
+</script> -->
+
+
+<body>
+    <div class="reveal">
+        <div class="slides">
+            <section>
+                <h2>Thinking about software performance</h2>
+                <h6>Dmytro Shynkar</h6>
+            </section>
+
+            <section>
+                <h3>Why performance</h3>
+                <section>
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/Q_HX5JyT18o?start=29&end=59"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen></iframe>
+                </section>
+                <section>
+                    <video width="560" height="315" autoplay>
+                        <source src="finals_choppy.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p class="fragment">No one is going to pay for this!</p>
+                </section>
+                <section>
+                    <ul>
+                        <li>Mobile applications - responsivness / battery</li>
+                        <li>Websites - responsivness and traffic usage</li>
+                        <li>more</li>
+                    </ul>
+                </section>
+            </section>
+
+            <section>
+                <h3>What is Performance?</h3>
+                <section>
+                    <ul>
+                        <li class="fragment">How fast stuff gets done - <em>latency</em></li>
+                        <div class="fragment ball"></div>
+                        <li class="fragment">How much stuff gets done - <em>throughput</em></li>
+                        <div class="fragment ball-container">
+                            <div class="ball"></div>
+                            <div class="ball"></div>
+                            <div class="ball"></div>
+                        </div>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Latency</h3>
+                    <ul>
+                        <li>Definition of Latency</li>
+                        <li>Examples of Latency in Real-World Scenarios</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Throughput</h3>
+                    <ul>
+                        <li>Definition of Throughput</li>
+                        <li>Examples of Throughput in Real-World Scenarios</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Relationship</h3>
+                    <ul>
+                        <li>Relationship between Latency and Throughput</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Other types of software performance</h3>
+                    <ul>
+                        <li>Relationship between Latency and Throughput</li>
+                    </ul>
+                </section>
+            </section>
+
+            <section>
+                <h2>What is Modern Hardware?</h2>
+                <ul>
+                    <li>Overview of Modern Hardware Architectures
+                        <ul>
+                            <li>ARM Architecture</li>
+                            <li>x86 Architecture</li>
+                        </ul>
+                    </li>
+                    <li>Key Features of Modern Hardware (excluding GPUs)
+                        <ul>
+                            <li>Power Efficiency</li>
+                            <li>Performance Capabilities</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>What’s Not Modern Hardware?</h2>
+                <ul>
+                    <li>Historical Hardware Examples
+                        <ul>
+                            <li>6502 Processor</li>
+                            <li>PDP-11 Minicomputer</li>
+                        </ul>
+                    </li>
+                    <li>Comparison of Old vs. Modern Hardware
+                        <ul>
+                            <li>Performance Differences</li>
+                            <li>Architectural Differences</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>The Level of Abstraction We’re At</h2>
+                <ul>
+                    <li>Introduction to Abstraction in Computing</li>
+                    <li>Why Abstraction Matters</li>
+                    <li>Current Abstraction Level: Rust Programming Language
+                        <ul>
+                            <li>Benefits of Using Rust</li>
+                            <li>Examples of Abstraction in Rust</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Why is Performance Useful?</h2>
+                <ul>
+                    <li>Practical Applications of High Performance
+                        <ul>
+                            <li>Speed of Light Calculations</li>
+                            <li>Various Optimizations</li>
+                            <li>Business Profit and Efficiency</li>
+                        </ul>
+                    </li>
+                    <li>Real-World Examples of Performance Improvements</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Why is Modern Hardware Important?</h2>
+                <ul>
+                    <li>Memory Latency and Its Impact</li>
+                    <li>Importance of Caches in Modern CPUs</li>
+                    <li>Role of SIMD (Single Instruction, Multiple Data)</li>
+                    <li>Benefits of Multicore Processors</li>
+                    <li>How Modern Hardware Enhances Performance</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Example of What Changed: Walking a Linked List</h2>
+                <section>
+                    <h3>Explanation of a Linked List</h3>
+                </section>
+                <section>
+                    <h3>Historical Perspective</h3>
+                    <ul>
+                        <li>How Linked Lists Operated on Historical Hardware</li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>Modern Perspective</h3>
+                    <ul>
+                        <li>How Linked Lists Operate on Modern Hardware
+                            <ul>
+                                <li>Performance Improvements</li>
+                                <li>Code Example in Rust</li>
+                                <li>Explanation of Improvements Due to Modern Hardware Features</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+            </section>
+
+            <section>
+                <h2>Conclusion</h2>
+                <ul>
+                    <li>Recap of Key Points</li>
+                    <li>Importance of Understanding Performance and Modern Hardware</li>
+                    <li>Future Trends in Hardware and Performance</li>
+                    <li>Q&A Session</li>
+                </ul>
+            </section>
+        </div>
+    </div>
+    <script src="node_modules/reveal.js/dist/reveal.js"></script>
+    <script>
+        Reveal.initialize();
+    </script>
+</body>
+
+</html>
