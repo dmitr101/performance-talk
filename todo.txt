@@ -1,0 +1,1 @@
+- put videos/resources in a r2/s3/whatever (public) bucket
