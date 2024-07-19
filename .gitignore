@@ -1,6 +1,13 @@
 # Created by https://www.toptal.com/developers/gitignore/api/node
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
 
+moderate_data.json
+small_data.json
+
+### Rust ###
+*/target/
+
+
 ### Node ###
 # Logs
 logs

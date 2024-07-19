@@ -69,7 +69,7 @@
                 <h6>Dmytro Shynkar</h6>
             </section>
 
-            <section>
+            <!-- <section>
                 <h3>Why performance</h3>
                 <section>
                     <iframe width="560" height="315" src="https://www.youtube.com/embed/Q_HX5JyT18o?start=29&end=59"
@@ -78,7 +78,7 @@
                         allowfullscreen></iframe>
                 </section>
                 <section>
-                    <video width="560" height="315" autoplay>
+                    <video width="560" height="315" autoplay loop>
                         <source src="finals_choppy.mp4" type="video/mp4">
                         Your browser does not support the video tag.
                     </video>
@@ -86,8 +86,10 @@
                 </section>
                 <section>
                     <ul>
-                        <li>Mobile applications - responsivness / battery</li>
-                        <li>Websites - responsivness and traffic usage</li>
+                        <li>The Amazon latency-to-revenue study <em class="fragment">sources are somewhat dubios</em>
+                        </li>
+                        <li>Mobile applications battery usage</li>
+                        <li>Cloud/infra costs</li>
                         <li>more</li>
                     </ul>
                 </section>
@@ -95,6 +97,7 @@
 
             <section>
                 <h3>What is Performance?</h3>
+                <h4>On a universal level</h4>
                 <section>
                     <ul>
                         <li class="fragment">How fast stuff gets done - <em>latency</em></li>
@@ -113,6 +116,7 @@
                         <li>Definition of Latency</li>
                         <li>Examples of Latency in Real-World Scenarios</li>
                     </ul>
+                    <p>Insanely important in video games and other soft and hard realtime systems</p>
                 </section>
                 <section>
                     <h3>Throughput</h3>
@@ -133,24 +137,29 @@
                         <li>Relationship between Latency and Throughput</li>
                     </ul>
                 </section>
-            </section>
+                <section>
+                    <p>Single node performance: mobile apps, games, individual services, databases, batch processors</p>
+                    <p>Not network</p>
+                </section>
+            </section> -->
 
             <section>
-                <h2>What is Modern Hardware?</h2>
-                <ul>
-                    <li>Overview of Modern Hardware Architectures
-                        <ul>
-                            <li>ARM Architecture</li>
-                            <li>x86 Architecture</li>
-                        </ul>
-                    </li>
-                    <li>Key Features of Modern Hardware (excluding GPUs)
-                        <ul>
-                            <li>Power Efficiency</li>
-                            <li>Performance Capabilities</li>
-                        </ul>
-                    </li>
-                </ul>
+                <h2>Hardware context</h2>
+                <section>
+                    <p>All software ultimatevely runs on some kind of hardware</p>
+                    <p>Even if it takes a long chain of abstractions to get there</p>
+                </section>
+                <section>
+                    <h3>Why does it matter?</h3>
+                    <div class="fragment" style="text-align:center;">
+                        <img src="6502.jpg" alt="6502 Processor"
+                            style="width:300px; height: fit-content; display:inline-block; vertical-align:middle;">
+                        <span style="font-size:24px; display:inline-block; vertical-align:middle;"> &#8800; </span>
+                        <img src="corei9.jpg" alt="Core i9 Processor"
+                            style="width:300px; height: fit-content; display:inline-block; vertical-align:middle;">
+                    </div>
+                </section>
+
             </section>
 
             <section>
