@@ -13,26 +13,52 @@ struct Histogram {
     buckets: Vec<Bucket>,
 }
 
-fn merge_histograms(mut histograms: Vec<Histogram>) -> Histogram {
-    if histograms.is_empty() {
-        return Histogram {
+impl Histogram {
+    fn new() -> Histogram {
+        Histogram {
             buckets: Vec::new(),
-        };
+        }
+    }
+
+    fn sort_buckets(&mut self) {
+        self.buckets
+            .sort_by(|a, b| a.min.partial_cmp(&b.min).unwrap());
+    }
+
+    fn merge_with(&mut self, other: &Histogram) {
+        for (idx, bucket) in other.buckets.iter().enumerate() {
+            self.buckets[idx].count += bucket.count;
+        }
+    }
+}
+
+fn merge_histograms_mut_in_place(mut histograms: Vec<Histogram>) -> Histogram {
+    if histograms.is_empty() {
+        return Histogram::new();
     }
 
     let mut result = histograms[0].clone();
-    result
-        .buckets
-        .sort_by(|a, b| a.min.partial_cmp(&b.min).unwrap());
+    result.sort_buckets();
     for histogram in histograms.iter_mut().skip(1) {
-        histogram
-            .buckets
-            .sort_by(|a, b| a.min.partial_cmp(&b.min).unwrap());
-        for (idx, bucket) in histogram.buckets.iter_mut().enumerate() {
-            result.buckets[idx].count += bucket.count;
-        }
+        histogram.sort_buckets();
+        result.merge_with(histogram);
     }
     result
+}
+
+fn merged_histograms_naive(histograms: Vec<Histogram>) -> Histogram {
+    histograms
+        .iter()
+        .map(|histogram| {
+            let mut sorted_histogram = histogram.clone();
+            sorted_histogram.sort_buckets();
+            sorted_histogram
+        })
+        .reduce(|mut acc, histogram| {
+            acc.merge_with(&histogram);
+            acc
+        })
+        .unwrap_or_else(Histogram::new)
 }
 
 fn calculate_percentile(histogram: &Histogram, percentile: f32) -> f32 {
@@ -48,20 +74,26 @@ fn calculate_percentile(histogram: &Histogram, percentile: f32) -> f32 {
     histogram.buckets.last().unwrap().max
 }
 
+fn read_data(filename: &str) -> Vec<Histogram> {
+    let file_content = read_to_string(filename).expect("Failed to read file");
+    serde_json::from_str(&file_content).expect("Failed to deserialize JSON")
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         eprintln!("Usage: {} <filename>", args[0]);
         std::process::exit(1);
     }
-
-    let file_content = read_to_string(&args[1]).expect("Failed to read file");
-    let histograms: Vec<Histogram> =
-        serde_json::from_str(&file_content).expect("Failed to deserialize JSON");
+    let histograms = read_data(&args[1]);
 
     let start_time = std::time::Instant::now();
-    let merged_histogram = merge_histograms(histograms);
+    let merged_histogram = merge_histograms_mut_in_place(histograms);
     let elapsed_time = start_time.elapsed();
+
+    // let start_time = std::time::Instant::now();
+    // let merged_histogram = merged_histograms_naive(histograms);
+    // let elapsed_time = start_time.elapsed();
 
     println!(
         "Merging histograms took {} seconds",
