@@ -1,1 +1,13 @@
 - put videos/resources in a r2/s3/whatever (public) bucket
+
+vm abstraction level
+introduce profiling
+show why caching sometimes is better
+show why caching sometimes messes up memory throughput
+todo: show what optimizer is doing
+todo: show effects of memory continuity
+todo: show effects of branch prediction
+todo: show pipeline stalls
+todo: multithreading
+todo: simd
+todo: false sharing

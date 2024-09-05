@@ -1,13 +1,14 @@
 import pygame
 import random
 import math
+import sys
 
 # Initialize Pygame
 pygame.init()
 
 # Screen dimensions
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 1070
+HEIGHT = 800
 
 # Colors
 WHITE = (255, 255, 255)
@@ -17,7 +18,8 @@ BLACK = (0, 0, 0)
 
 # Boid properties
 BOID_SIZE = 10
-INITIAL_BOIDS = 50
+# Accept initial boid count from command line
+INITIAL_BOIDS = int(sys.argv[1] if len(sys.argv) > 1 else 100)
 MAX_SPEED = 240  # pixels per second
 MAX_FORCE = 200  # pixels per second
 PERCEPTION = 50

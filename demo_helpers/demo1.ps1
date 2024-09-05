@@ -1,0 +1,1 @@
+Start-Process -FilePath "python" -NoNewWindow -PassThru -ArgumentList "$PSScriptRoot\..\boids-py\main.py"
