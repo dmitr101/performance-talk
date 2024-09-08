@@ -166,6 +166,134 @@
                 <h3>Was it good?</h3>
                 <p>Let's see!</p>
             </section>
+            <section>
+                <h3>Boids</h3>
+                <section>
+                    <p>A really simple algorithm giving surprisingly good results</p>
+                    <ul>
+                        <li>Each boid follows 3 simple rules</li>
+                        <li>Alignment</li>
+                        <li>Cohesion</li>
+                        <li>Separation</li>
+                    </ul>
+                </section>
+                <section>
+                    <p>Alignment</p>
+                    <img src="boid-alignment.png" style="width:600px;" />
+                </section>
+                <section>
+                    <p>Cohesion</p>
+                    <img src=" boid-cohesion.png" style="width:600px;" />
+                </section>
+                <section>
+                    <p>Separation</p>
+                    <img src="boid-separation.png" style="width:600px;">
+                </section>
+                <section>
+                    <p>For each boid out of N</p>
+                    <ul>
+                        <li>6n distance calculations + ~10 flops</li>
+                        <li class="fragment">Distance calculation depending on impl may be just 2-3 flops </li>
+                        <li class="fragment">2.5kflops per boid, or 1M flops for 400</li>
+                        <li class="fragment">Let's be generous and say 2M per iteration</li>
+                        <li class="fragment">So for 15FPS we come to ~30M flop/s</li>
+                    </ul>
+                </section>
+            </section>
+            <section>
+                <h3>Profiling time</h3>
+                <section>
+                    <p>Except it's not that easy!</p>
+                    <ul>
+                        <li>Frame time includes input handling and drawing</li>
+                        <li>Profilers to the resque!</li>
+                    </ul>
+                </section>
+            </section>
+            <section>
+                <h2>Demo time</h2>
+            </section>
+            <section>
+                <h3>Profiling time</h3>
+                <p>This time we basically guessed right</p>
+                <p class="fragment">Let's correct to ~32M flop/s</p>
+            </section>
+            <section>
+                <h3>This machine</h3>
+                <section>
+                    <ul>
+                        <li>AMD Ryzen 9 5900HS</li>
+                        <li>32GB DDR4</li>
+                        <li>RTX 3060</li>
+                    </ul>
+                    <h3 class="fragment" style="margin-top: 50px;">47 GFlops/sec</h3>
+                    <em class="fragment" style="font-size: 15px;">Just on the CPU</em>
+                </section>
+            </section>
+            <section>
+                <h3>Napkin math</h3>
+                <p>1400x slower than the machines hypothetical speed</p>
+                <p class="fragment">Why?</p>
+            </section>
+            <section>
+                <h3>How Python works</h3>
+                <section>
+                    <img src="py_exec.webp" />
+                </section>
+                <section>
+                    <a href="https://godbolt.org/z/x5zTeEvE6">Let's look at what runs</a>
+                    <ul class="fragment">
+                        <li>Bytecode != assembly</li>
+                        <li>Interpreters can still be written to be highly efficient</li>
+                        <li>i.e. <a
+                                href="https://www.reddit.com/r/programming/comments/badl2/comment/c0lrus0/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button">LuaJIT</a>
+                        </li>
+                        <li>CPython is not one of those interpreters</li>
+                        <li>Fast things in Python are not written in Python</li>
+
+                    </ul>
+                    <p class="fragment" style="font-size: 15px;">I still write a lot of it</p>
+                </section>
+            </section>
+            <section>
+                <h3>Rewrite it in Rust!</h3>
+                <p>While keeping as much semantics as possible</p>
+                <p class="fragment">Is it better?</p>
+            </section>
+            <section>
+                <h2>Demo time</h2>
+                <!--Show debug and then release version-->
+            </section>
+            <section>
+                <h3>Seems to be!</h3>
+                <p>~3x or 90Mflop/s</p>
+                <p>~25x or 0.75Gflop/s</p>
+            </section>
+            <section>
+                <h3>Abstract machine and optimization</h3>
+                <section>
+                    <ul>
+                        <li>Rust isn't "close to the metal"</li>
+                        <li>Neither is C or C++</li>
+                        <li>In every case we're programming against the abstract machine</li>
+                        <li>That's where we get undefined behavior and other fun things from</li>
+                    </ul>
+                </section>
+                <section>
+                    <ul>
+                        <li>LLVM is really good at translating the abstract to concrete</li>
+                        <li><a>First version</a></li>
+                        <li><a>Second version</a></li>
+                    </ul>
+                </section>
+
+            </section>
+
+            </section>
+            <!-- <section>
+                <h3 style="margin-bottom: 0;">Coming back to hardware</h3>
+                <img src="Zen3_arch_5.jpg" style="height: 630px;" />
+            </section> -->
         </div>
     </div>
     <script src="node_modules/reveal.js/dist/reveal.js"></script>

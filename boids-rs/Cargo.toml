@@ -3,7 +3,28 @@ name = "boids-rs"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+debug = true
+
 [dependencies]
 ggez = "0.9.3"
 glam = { version = "0.29.0", features = ["mint"] }
 rand = "0.8.5"
+rand_chacha = "0.3.1"
+tracy-client = { version = "0.17.3", features = [
+    "system-tracing",
+    "context-switch-tracing",
+    "sampling",
+    "code-transfer",
+    "broadcast",
+    "callstack-inlines",
+] }
+tracy-client-sys = "0.24.0"
+
+[features]
+default = []
+static_update = []
+no_boxing = []
+cash_thrash = []
+no_life_history = []
+profile = ["tracy-client/enable"]

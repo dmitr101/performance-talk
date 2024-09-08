@@ -36,6 +36,7 @@ class Boid:
         self.velocity = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
         self.velocity = self.velocity.normalize() * random.uniform(1, MAX_SPEED)
         self.acceleration = pygame.Vector2(0, 0)
+        self.life_history = [0 for _ in range(512)]
 
     def update(self, dt):
         self.velocity += self.acceleration * dt
@@ -48,7 +49,8 @@ class Boid:
         steering = pygame.Vector2(0, 0)
         total = 0
         for boid in boids:
-            if boid != self and self.position.distance_to(boid.position) < PERCEPTION:
+            distance = self.position.distance_to(boid.position)
+            if boid != self and distance < PERCEPTION and distance > 0:
                 steering += boid.velocity
                 total += 1
         if total > 0:
@@ -63,7 +65,8 @@ class Boid:
         steering = pygame.Vector2(0, 0)
         total = 0
         for boid in boids:
-            if boid != self and self.position.distance_to(boid.position) < PERCEPTION:
+            distance = self.position.distance_to(boid.position)
+            if boid != self and distance < PERCEPTION and distance > 0:
                 steering += boid.position
                 total += 1
         if total > 0:
@@ -80,7 +83,7 @@ class Boid:
         total = 0
         for boid in boids:
             distance = self.position.distance_to(boid.position)
-            if boid != self and distance < SEPARATION:
+            if boid != self and distance < SEPARATION and distance > 0:
                 diff = self.position - boid.position
                 diff = diff.normalize() / distance
                 steering += diff
@@ -97,7 +100,7 @@ class Boid:
         steering = pygame.Vector2(0, 0)
         distance = self.position.distance_to(mouse_pos)
 
-        if distance < MOUSE_PERCEPTION:
+        if distance < MOUSE_PERCEPTION and distance > 0:
             diff = mouse_pos - self.position
             diff = diff.normalize()
 
@@ -166,6 +169,21 @@ font = pygame.font.Font(None, 36)
 # Initial attraction state
 is_attracted = False
 
+
+def update_all_boids(
+    boids: list[Boid], dt: float, mouse_pos: pygame.Vector2, is_attracted: bool
+):
+    for boid in boids:
+        boid.apply_behavior(boids, mouse_pos, is_attracted)
+        boid.update(dt)
+        boid.edges()
+
+
+def draw_all_boids(boids: list[Boid], screen: pygame.Surface, is_attracted: bool):
+    for boid in boids:
+        boid.draw(screen, is_attracted)
+
+
 # Main game loop
 running = True
 while running:
@@ -187,12 +205,8 @@ while running:
 
     mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
 
-    # Update and draw boids
-    for boid in boids:
-        boid.apply_behavior(boids, mouse_pos, is_attracted)
-        boid.update(dt)
-        boid.edges()
-        boid.draw(screen, is_attracted)
+    update_all_boids(boids, dt, mouse_pos, is_attracted)
+    draw_all_boids(boids, screen, is_attracted)
 
     # Calculate and draw FPS
     fps = clock.get_fps()
