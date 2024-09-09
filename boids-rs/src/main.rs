@@ -50,6 +50,20 @@ impl Boid {
         }
     }
 
+    #[cfg(not(feature = "pre_square"))]
+    #[inline(always)]
+    fn is_close_enough(&self, other: &Boid, max_dist: f32) -> bool {
+        let distance = self.position.distance(other.position);
+        distance < max_dist && distance > 0.0
+    }
+
+    #[cfg(feature = "pre_square")]
+    #[inline(always)]
+    fn is_close_enough(&self, other: &Boid, max_dist: f32) -> bool {
+        let distance = self.position.distance_squared(other.position);
+        distance < (max_dist * max_dist) && distance > 0.0
+    }
+
     #[inline(never)]
     fn alignment(&self, boids: &[BoidRef], self_idx: usize) -> Vec2 {
         let mut alignment = Vec2::ZERO;
@@ -61,9 +75,7 @@ impl Boid {
             }
 
             let other = boids[other_idx].borrow();
-            let distance = self.position.distance(other.position);
-
-            if distance < PERCEPTION && distance > 0.0 {
+            if self.is_close_enough(&other, PERCEPTION) {
                 alignment += other.velocity;
                 total += 1;
             }
@@ -89,9 +101,7 @@ impl Boid {
             }
 
             let other = boids[other_idx].borrow();
-            let distance = self.position.distance(other.position);
-
-            if distance < PERCEPTION && distance > 0.0 {
+            if self.is_close_enough(&other, PERCEPTION) {
                 cohesion += other.position;
                 total += 1;
             }

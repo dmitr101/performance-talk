@@ -11,3 +11,5 @@ todo: show pipeline stalls
 todo: multithreading
 todo: simd
 todo: false sharing
+
+todo: costly instructions(division, sqr)
