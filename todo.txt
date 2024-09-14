@@ -7,8 +7,8 @@ show why caching sometimes messes up memory throughput
 todo: show what optimizer is doing
 todo: show effects of memory continuity
 todo: show effects of branch prediction
-todo: show pipeline stalls
 todo: multithreading
+todo: show pipeline stalls
 todo: simd
 todo: false sharing
 
