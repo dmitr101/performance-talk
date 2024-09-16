@@ -282,23 +282,29 @@ impl EventHandler for MainState {
                     .unwrap_or(NonZero::new(1).unwrap())
                     .into();
                 let num_chunks = (boids_len) / core_count;
-                (0..core_count).into_par_iter().for_each(|core_idx| {
-                    tracy_scope!("update_boids_thread");
-                    for chunk_idx in 0..num_chunks {
-                        let boid_idx = chunk_idx * core_count + core_idx;
-                        let current_boids = self.boids.get_current_boids();
-                        let next_boids = self.boids.get_next_boids();
-                        let boid = &current_boids[boid_idx];
-                        let acc = boid.calc_acceleration(
-                            boid_idx,
-                            &current_boids,
-                            mouse_pos,
-                            self.is_attracted,
-                        );
-                        next_boids[boid_idx].update(dt, &boid, acc);
-                        next_boids[boid_idx].edges(self.rect_max.x, self.rect_max.y);
-                    }
-                });
+                (0..core_count)
+                    .into_par_iter()
+                    .with_min_len(1)
+                    .with_max_len(1)
+                    .for_each(|core_idx| {
+                        tracy_scope!("update_boids_thread");
+                        for chunk_idx in 0..num_chunks {
+                            let boid_idx = chunk_idx * core_count + core_idx;
+                            let current_boids = self.boids.get_current_boids();
+                            let next_boids = self.boids.get_next_boids();
+                            let boid = &current_boids[boid_idx];
+                            let acc = boid.calc_acceleration(
+                                boid_idx,
+                                &current_boids,
+                                mouse_pos,
+                                self.is_attracted,
+                            );
+                            let next_boid = &mut next_boids[boid_idx];
+                            std::hint::black_box(next_boid.position + next_boid.velocity);
+                            next_boid.update(dt, &boid, acc);
+                            next_boid.edges(self.rect_max.x, self.rect_max.y);
+                        }
+                    });
             }
             #[cfg(feature = "no_false_sharing")]
             {
