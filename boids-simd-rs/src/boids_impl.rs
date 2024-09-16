@@ -1,8 +1,5 @@
 use std::cell::UnsafeCell;
-use std::num::NonZero;
 use std::simd::cmp::{SimdPartialEq, SimdPartialOrd};
-use std::simd::num::SimdFloat;
-use std::thread::current;
 
 use ggez::event::EventHandler;
 use ggez::graphics::{self, Color, DrawParam, Text};
@@ -11,7 +8,7 @@ use glam::Vec2;
 use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
 
-use std::simd::{f32x8, i32x8, Mask, StdFloat};
+use std::simd::{f32x8, Mask, StdFloat};
 
 pub const BOID_SIZE: f32 = 10.0;
 pub const MAX_SPEED: f32 = 100.0;
@@ -73,18 +70,6 @@ impl SimdVec2 {
 
     fn length_squared(&self) -> f32x8 {
         self.x * self.x + self.y * self.y
-    }
-
-    fn distance(&self, other: &Self) -> f32x8 {
-        let dx = self.x - other.x;
-        let dy = self.y - other.y;
-        (dx * dx + dy * dy).sqrt()
-    }
-
-    fn distance_squared(&self, other: &Self) -> f32x8 {
-        let dx = self.x - other.x;
-        let dy = self.y - other.y;
-        dx * dx + dy * dy
     }
 
     fn clamp_length_max(&self, max: f32) -> Self {
@@ -394,153 +379,6 @@ struct Boid {
 impl Boid {
     fn new(position: Vec2, velocity: Vec2) -> Self {
         Boid { position, velocity }
-    }
-
-    #[inline(always)]
-    fn is_close_enough(&self, other: &Boid, max_dist: f32) -> bool {
-        let distance = self.position.distance_squared(other.position);
-        distance < (max_dist * max_dist) && distance > 0.0
-    }
-
-    #[inline(never)]
-    fn alignment(&self, boids: &[Boid], self_idx: usize) -> Vec2 {
-        let mut alignment = Vec2::ZERO;
-        let mut total = 0;
-
-        for other_idx in 0..boids.len() {
-            if other_idx == self_idx {
-                continue;
-            }
-
-            let other = &boids[other_idx];
-            if self.is_close_enough(&other, PERCEPTION) {
-                alignment += other.velocity;
-                total += 1;
-            }
-        }
-
-        if total > 0 {
-            alignment /= total as f32;
-            alignment = alignment.normalize() * MAX_SPEED;
-            alignment -= self.velocity;
-            alignment = alignment.clamp_length_max(MAX_FORCE);
-        }
-        alignment
-    }
-
-    #[inline(never)]
-    fn cohesion(&self, boids: &[Boid], self_idx: usize) -> Vec2 {
-        let mut cohesion = Vec2::ZERO;
-        let mut total = 0;
-
-        for other_idx in 0..boids.len() {
-            if other_idx == self_idx {
-                continue;
-            }
-
-            let other = &boids[other_idx];
-            if self.is_close_enough(&other, PERCEPTION) {
-                cohesion += other.position;
-                total += 1;
-            }
-        }
-
-        if total > 0 {
-            cohesion /= total as f32;
-            cohesion -= self.position;
-            cohesion = cohesion.normalize() * MAX_SPEED;
-            cohesion -= self.velocity;
-            cohesion = cohesion.clamp_length_max(MAX_FORCE);
-        }
-
-        cohesion
-    }
-
-    #[inline(never)]
-    fn separation(&self, boids: &[Boid], self_idx: usize) -> Vec2 {
-        let mut separation = Vec2::ZERO;
-        let mut total_separation = 0;
-
-        for other_idx in 0..boids.len() {
-            if other_idx == self_idx {
-                continue;
-            }
-
-            let other = &boids[other_idx];
-            let distance = self.position.distance(other.position);
-
-            if distance < SEPARATION && distance > 0.0 {
-                let diff = (self.position - other.position).normalize() / distance;
-                separation += diff;
-                total_separation += 1;
-            }
-        }
-
-        if total_separation > 0 {
-            separation /= total_separation as f32;
-            separation = separation.normalize() * MAX_SPEED;
-            separation -= self.velocity;
-            separation = separation.clamp_length_max(MAX_FORCE);
-        }
-
-        separation
-    }
-
-    #[inline(never)]
-    fn calc_acceleration(
-        &self,
-        self_idx: usize,
-        boids: &[Boid],
-        mouse_pos: Vec2,
-        is_attracted: bool,
-    ) -> Vec2 {
-        let alignment = self.alignment(boids, self_idx);
-        let cohesion = self.cohesion(boids, self_idx);
-        let separation = self.separation(boids, self_idx);
-
-        let mut acceleration = alignment;
-        acceleration += cohesion;
-        acceleration += separation;
-
-        if is_attracted {
-            let attraction = (mouse_pos - self.position).normalize() * MAX_SPEED;
-            acceleration += attraction;
-        }
-        assert!(acceleration.is_finite());
-        acceleration
-    }
-
-    fn update(&mut self, dt: f32, source: &Boid, acceleration: Vec2) {
-        self.position = source.position;
-        self.velocity = source.velocity;
-
-        let this_frame_acceleration = std::hint::black_box(acceleration * dt);
-        #[cfg(feature = "static_update")]
-        let this_frame_acceleration = Vec2::ZERO;
-
-        self.velocity += this_frame_acceleration;
-        assert!(self.velocity.is_finite());
-
-        let this_frame_velocity = std::hint::black_box(self.velocity * dt);
-        #[cfg(feature = "static_update")]
-        let this_frame_velocity = Vec2::ZERO;
-
-        self.position += this_frame_velocity;
-        assert!(self.position.is_finite());
-    }
-
-    fn edges(&mut self, screen_width: f32, screen_height: f32) {
-        if self.position.x > screen_width {
-            self.position.x = 0.0;
-        } else if self.position.x < 0.0 {
-            self.position.x = screen_width;
-        }
-
-        if self.position.y > screen_height {
-            self.position.y = 0.0;
-        } else if self.position.y < 0.0 {
-            self.position.y = screen_height;
-        }
     }
 
     fn draw(&self, canvas: &mut graphics::Canvas, boid_mesh: &graphics::Mesh) -> GameResult {
