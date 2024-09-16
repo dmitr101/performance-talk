@@ -10,7 +10,6 @@ use rayon::prelude::*;
 
 use crate::util::*;
 
-#[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 struct Boid {
     position: Vec2,

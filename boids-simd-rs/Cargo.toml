@@ -1,5 +1,5 @@
 [package]
-name = "boids-rs"
+name = "boids-simd-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -24,11 +24,7 @@ tracy-client-sys = "0.24.0"
 
 [features]
 default = []
-static_update = []
-no_boxing = []
-no_life_history = []
-pre_square = []
 threaded = []
-no_false_sharing = []
-all_but_threaded = ["no_boxing", "no_life_history", "pre_square", "no_false_sharing", "static_update"]
+static_update = []
 profile = ["tracy-client/enable"]
+
