@@ -1,3 +1,4 @@
+use core::num;
 use std::cell::UnsafeCell;
 use std::simd::cmp::{SimdPartialEq, SimdPartialOrd};
 
@@ -7,6 +8,8 @@ use ggez::{Context, GameResult};
 use glam::Vec2;
 use rand::{Rng, SeedableRng};
 use rayon::prelude::*;
+
+use seq_macro::seq;
 
 use std::simd::{f32x8, Mask, StdFloat};
 
@@ -78,6 +81,12 @@ impl SimdVec2 {
         let mask = length_sqr.simd_gt(max_simd * max_simd);
         let x = mask.select(max_simd * (self.x / length_sqr.sqrt()), self.x);
         let y = mask.select(max_simd * (self.y / length_sqr.sqrt()), self.y);
+        SimdVec2 { x, y }
+    }
+
+    fn rotate_elements_right<const OFFSET: usize>(&self) -> Self {
+        let x = self.x.rotate_elements_right::<OFFSET>();
+        let y = self.y.rotate_elements_right::<OFFSET>();
         SimdVec2 { x, y }
     }
 }
@@ -168,41 +177,66 @@ impl BoidsVec {
         }
     }
 
+    #[inline(always)]
+    fn whole_boids_at(&self, chunk_idx: usize) -> (SimdVec2, SimdVec2) {
+        let start = chunk_idx * CHUNK_SIZE;
+        let end = start + CHUNK_SIZE;
+        let pos = SimdVec2::new(
+            f32x8::from_slice(&self.pos_x[start..end]),
+            f32x8::from_slice(&self.pos_y[start..end]),
+        );
+        let vel = SimdVec2::new(
+            f32x8::from_slice(&self.vel_x[start..end]),
+            f32x8::from_slice(&self.vel_y[start..end]),
+        );
+        (pos, vel)
+    }
+
+    #[inline(always)]
+    fn boids_pos_at(&self, chunk_idx: usize) -> SimdVec2 {
+        let start = chunk_idx * CHUNK_SIZE;
+        let end = start + CHUNK_SIZE;
+        SimdVec2::new(
+            f32x8::from_slice(&self.pos_x[start..end]),
+            f32x8::from_slice(&self.pos_y[start..end]),
+        )
+    }
+
+    #[inline(always)]
+    fn alignment_for_permutation<const PERM: usize>(
+        alignment: &mut SimdVec2,
+        total: &mut f32x8,
+        this_pos: &SimdVec2,
+        other_pos: &SimdVec2,
+        other_vel: &SimdVec2,
+    ) {
+        let other_pos = other_pos.rotate_elements_right::<PERM>();
+        let other_vel = other_vel.rotate_elements_right::<PERM>();
+        let is_close_mask = simd_is_close_enough(&this_pos, &other_pos, PERCEPTION);
+        let epsilon_mask = simd_epsilon_check(&this_pos, &other_pos);
+        let mask = is_close_mask & epsilon_mask;
+        let one_or_zero = mask.select(f32x8::splat(1.0), f32x8::splat(0.0));
+        *alignment += other_vel * one_or_zero;
+        *total += one_or_zero;
+    }
+
     #[inline(never)]
     fn alignment(&self, chunk_idx: usize) -> SimdVec2 {
         let mut alignment: SimdVec2 = SimdVec2::new_splat_all(0.0);
         let mut total: f32x8 = f32x8::splat(0.0);
 
-        let my_start = chunk_idx * CHUNK_SIZE;
-        let my_end = my_start + CHUNK_SIZE;
-        let this_pos = SimdVec2::new(
-            f32x8::from_slice(&self.pos_x[my_start..my_end]),
-            f32x8::from_slice(&self.pos_y[my_start..my_end]),
-        );
-        let this_vel = SimdVec2::new(
-            f32x8::from_slice(&self.vel_x[my_start..my_end]),
-            f32x8::from_slice(&self.vel_y[my_start..my_end]),
-        );
-
-        let num_chunks = self.pos_x.len() / CHUNK_SIZE;
-        for other_chunk_idx in 0..num_chunks {
-            let start = other_chunk_idx * CHUNK_SIZE;
-            let end = start + CHUNK_SIZE;
-            let other_pos = SimdVec2::new(
-                f32x8::from_slice(&self.pos_x[start..end]),
-                f32x8::from_slice(&self.pos_y[start..end]),
-            );
-            let other_vel = SimdVec2::new(
-                f32x8::from_slice(&self.vel_x[start..end]),
-                f32x8::from_slice(&self.vel_y[start..end]),
-            );
-
-            let is_close_mask = simd_is_close_enough(&this_pos, &other_pos, PERCEPTION);
-            let epsilon_mask = simd_epsilon_check(&this_pos, &other_pos);
-            let mask = is_close_mask & epsilon_mask;
-            let one_or_zero = mask.select(f32x8::splat(1.0), f32x8::splat(0.0));
-            alignment += other_vel * one_or_zero;
-            total += one_or_zero;
+        let (this_pos, this_vel) = self.whole_boids_at(chunk_idx);
+        for other_chunk_idx in 0..self.num_chunks() {
+            let (other_pos, other_vel) = self.whole_boids_at(other_chunk_idx);
+            seq!(N in 0..8 {
+                Self::alignment_for_permutation::<N>(
+                    &mut alignment,
+                    &mut total,
+                    &this_pos,
+                    &other_pos,
+                    &other_vel,
+                );
+            });
         }
 
         let total_mask = total.simd_ne(f32x8::splat(0.0));
@@ -213,37 +247,38 @@ impl BoidsVec {
         alignment.select(total_mask, SimdVec2::zero())
     }
 
+    #[inline(always)]
+    fn cohesion_for_permutation<const PERM: usize>(
+        cohesion: &mut SimdVec2,
+        total: &mut f32x8,
+        this_pos: &SimdVec2,
+        other_pos: &SimdVec2,
+    ) {
+        let other_pos = other_pos.rotate_elements_right::<PERM>();
+        let is_close_mask = simd_is_close_enough(&this_pos, &other_pos, PERCEPTION);
+        let epsilon_mask = simd_epsilon_check(&this_pos, &other_pos);
+        let mask = is_close_mask & epsilon_mask;
+        let one_or_zero = mask.select(f32x8::splat(1.0), f32x8::splat(0.0));
+        *cohesion += other_pos * one_or_zero;
+        *total += one_or_zero;
+    }
+
     #[inline(never)]
     fn cohesion(&self, chunk_idx: usize) -> SimdVec2 {
         let mut cohesion: SimdVec2 = SimdVec2::new_splat_all(0.0);
         let mut total: f32x8 = f32x8::splat(0.0);
 
-        let my_start = chunk_idx * CHUNK_SIZE;
-        let my_end = my_start + CHUNK_SIZE;
-        let this_pos = SimdVec2::new(
-            f32x8::from_slice(&self.pos_x[my_start..my_end]),
-            f32x8::from_slice(&self.pos_y[my_start..my_end]),
-        );
-        let this_vel = SimdVec2::new(
-            f32x8::from_slice(&self.vel_x[my_start..my_end]),
-            f32x8::from_slice(&self.vel_y[my_start..my_end]),
-        );
-
-        let num_chunks = self.pos_x.len() / CHUNK_SIZE;
-        for other_chunk_idx in 0..num_chunks {
-            let start = other_chunk_idx * CHUNK_SIZE;
-            let end = start + CHUNK_SIZE;
-            let other_pos = SimdVec2::new(
-                f32x8::from_slice(&self.pos_x[start..end]),
-                f32x8::from_slice(&self.pos_y[start..end]),
-            );
-
-            let is_close_mask = simd_is_close_enough(&this_pos, &other_pos, PERCEPTION);
-            let epsilon_mask = simd_epsilon_check(&this_pos, &other_pos);
-            let mask = is_close_mask & epsilon_mask;
-            let one_or_zero = mask.select(f32x8::splat(1.0), f32x8::splat(0.0));
-            cohesion += other_pos * one_or_zero;
-            total += one_or_zero;
+        let (this_pos, this_vel) = self.whole_boids_at(chunk_idx);
+        for other_chunk_idx in 0..self.num_chunks() {
+            let other_pos = self.boids_pos_at(other_chunk_idx);
+            seq!(N in 0..8 {
+                Self::cohesion_for_permutation::<N>(
+                    &mut cohesion,
+                    &mut total,
+                    &this_pos,
+                    &other_pos,
+                );
+            });
         }
 
         let total_mask = total.simd_ne(f32x8::splat(0.0));
@@ -254,41 +289,41 @@ impl BoidsVec {
         cohesion.select(total_mask, SimdVec2::zero())
     }
 
+    #[inline(always)]
+    fn separation_for_permutation<const PERM: usize>(
+        separation: &mut SimdVec2,
+        total: &mut f32x8,
+        this_pos: &SimdVec2,
+        other_pos: &SimdVec2,
+    ) {
+        let other_pos = other_pos.rotate_elements_right::<PERM>();
+        let diff = *this_pos - other_pos;
+        let distance = diff.length();
+        let is_close_mask = distance.simd_le(f32x8::splat(SEPARATION));
+        let epsilon_mask = distance.simd_gt(f32x8::splat(EPSILON));
+        let mask = is_close_mask & epsilon_mask;
+        let separation_acc =
+            (diff.normalize() / distance).select(mask, SimdVec2::new_splat_all(0.0));
+        *separation += separation_acc;
+        *total += mask.select(f32x8::splat(1.0), f32x8::splat(0.0));
+    }
+
     #[inline(never)]
     fn separation(&self, chunk_idx: usize) -> SimdVec2 {
         let mut separation: SimdVec2 = SimdVec2::new_splat_all(0.0);
         let mut total: f32x8 = f32x8::splat(0.0);
 
-        let my_start = chunk_idx * CHUNK_SIZE;
-        let my_end = my_start + CHUNK_SIZE;
-        let this_pos = SimdVec2::new(
-            f32x8::from_slice(&self.pos_x[my_start..my_end]),
-            f32x8::from_slice(&self.pos_y[my_start..my_end]),
-        );
-        let this_vel = SimdVec2::new(
-            f32x8::from_slice(&self.vel_x[my_start..my_end]),
-            f32x8::from_slice(&self.vel_y[my_start..my_end]),
-        );
-
-        let num_chunks = self.pos_x.len() / CHUNK_SIZE;
-        for other_chunk_idx in 0..num_chunks {
-            let start = other_chunk_idx * CHUNK_SIZE;
-            let end = start + CHUNK_SIZE;
-            let other_pos = SimdVec2::new(
-                f32x8::from_slice(&self.pos_x[start..end]),
-                f32x8::from_slice(&self.pos_y[start..end]),
-            );
-
-            let diff = this_pos - other_pos;
-            let distance = diff.length();
-
-            let is_close_mask = distance.simd_le(f32x8::splat(SEPARATION));
-            let epsilon_mask = distance.simd_gt(f32x8::splat(EPSILON));
-            let mask = is_close_mask & epsilon_mask;
-            let separation_acc =
-                (diff.normalize() / distance).select(mask, SimdVec2::new_splat_all(0.0));
-            separation += separation_acc;
-            total += mask.select(f32x8::splat(1.0), f32x8::splat(0.0));
+        let (this_pos, this_vel) = self.whole_boids_at(chunk_idx);
+        for other_chunk_idx in 0..self.num_chunks() {
+            let other_pos = self.boids_pos_at(other_chunk_idx);
+            seq!(N in 0..8 {
+                Self::separation_for_permutation::<N>(
+                    &mut separation,
+                    &mut total,
+                    &this_pos,
+                    &other_pos,
+                );
+            });
         }
 
         let total_mask = total.simd_ne(f32x8::splat(0.0));
@@ -498,11 +533,18 @@ impl EventHandler for MainState {
             #[cfg(feature = "threaded")]
             {
                 let num_chunks = self.boids.get_current_boids().num_chunks();
-                (0..num_chunks).into_par_iter().for_each(|chunk_idx| {
-                    self.boids
-                        .get_next_boids()
-                        .update(chunk_idx, dt, self.boids.get_current_boids(), self.rect_max);
-                });
+                (0..num_chunks)
+                    .into_par_iter()
+                    .with_min_len(8)
+                    .for_each(|chunk_idx| {
+                        tracy_scope!("update_boids_thread");
+                        self.boids.get_next_boids().update(
+                            chunk_idx,
+                            dt,
+                            self.boids.get_current_boids(),
+                            self.rect_max,
+                        );
+                    });
             }
 
             self.boids.swap();
