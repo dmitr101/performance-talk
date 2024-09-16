@@ -1,0 +1,1 @@
+Start-Process cargo -NoNewWindow -PassThru -WorkingDirectory "$PSScriptRoot\..\boids-rs" -ArgumentList "run", "--release", "--", "400"

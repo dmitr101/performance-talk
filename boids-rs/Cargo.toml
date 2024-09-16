@@ -11,6 +11,7 @@ ggez = "0.9.3"
 glam = { version = "0.29.0", features = ["mint"] }
 rand = "0.8.5"
 rand_chacha = "0.3.1"
+rayon = "1.10.0"
 tracy-client = { version = "0.17.3", features = [
     "system-tracing",
     "context-switch-tracing",
@@ -27,4 +28,6 @@ static_update = []
 no_boxing = []
 no_life_history = []              #todo: remove
 pre_square = []
+threaded = []
+no_false_sharing = []
 profile = ["tracy-client/enable"]

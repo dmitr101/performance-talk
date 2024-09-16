@@ -250,6 +250,7 @@ dependencies = [
  "glam 0.29.0",
  "rand",
  "rand_chacha",
+ "rayon",
  "tracy-client",
  "tracy-client-sys",
 ]
