@@ -30,5 +30,28 @@ no_life_history = []
 pre_square = []
 threaded = []
 no_false_sharing = []
-all_but_threaded = ["no_boxing", "no_life_history", "pre_square", "no_false_sharing", "static_update"]
+all_but_threaded = [
+    "no_boxing",
+    "no_life_history",
+    "pre_square",
+    "no_false_sharing",
+    "static_update",
+]
+profile_threaded_bad = [
+    "threaded",
+    "no_boxing",
+    "no_life_history",
+    "pre_square",
+    "static_update",
+    "profile",
+]
+profile_threaded_better = [
+    "threaded",
+    "no_boxing",
+    "no_life_history",
+    "no_false_sharing",
+    "pre_square",
+    "static_update",
+    "profile",
+]
 profile = ["tracy-client/enable"]

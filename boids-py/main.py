@@ -155,21 +155,6 @@ class Boid:
         pygame.draw.polygon(screen, color, [p1, p2, p3])
 
 
-# Create boids
-boids = [Boid() for _ in range(INITIAL_BOIDS)]
-
-# Set up the display
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Boids Simulation")
-clock = pygame.time.Clock()
-
-# Set up font for FPS and boid count
-font = pygame.font.Font(None, 36)
-
-# Initial attraction state
-is_attracted = False
-
-
 def update_all_boids(
     boids: list[Boid], dt: float, mouse_pos: pygame.Vector2, is_attracted: bool
 ):
@@ -185,38 +170,57 @@ def draw_all_boids(boids: list[Boid], screen: pygame.Surface, is_attracted: bool
 
 
 # Main game loop
-running = True
-while running:
-    dt = clock.tick() / 1000.0  # Get the time elapsed since last frame in seconds
+def run_game():
+    # Create boids
+    boids = [Boid() for _ in range(INITIAL_BOIDS)]
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                is_attracted = not is_attracted
-            elif event.key == pygame.K_UP:
-                boids.extend([Boid() for _ in range(10)])
-            elif event.key == pygame.K_DOWN:
-                for _ in range(min(10, len(boids))):
-                    boids.pop()
+    # Set up the display
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Boids Simulation")
+    clock = pygame.time.Clock()
 
-    screen.fill(WHITE)
+    # Set up font for FPS and boid count
+    font = pygame.font.Font(None, 36)
 
-    mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
+    # Initial attraction state
+    is_attracted = False
 
-    update_all_boids(boids, dt, mouse_pos, is_attracted)
-    draw_all_boids(boids, screen, is_attracted)
+    running = True
+    while running:
+        dt = clock.tick() / 1000.0  # Get the time elapsed since last frame in seconds
 
-    # Calculate and draw FPS
-    fps = clock.get_fps()
-    fps_text = font.render(f"FPS: {fps:.2f}", True, BLACK)
-    screen.blit(fps_text, (10, 10))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT or (
+                event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+            ):
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    is_attracted = not is_attracted
+                elif event.key == pygame.K_UP:
+                    boids.extend([Boid() for _ in range(10)])
+                elif event.key == pygame.K_DOWN:
+                    for _ in range(min(10, len(boids))):
+                        boids.pop()
 
-    # Draw boid count
-    boid_count_text = font.render(f"Boids: {len(boids)}", True, BLACK)
-    screen.blit(boid_count_text, (10, 50))
+        screen.fill(WHITE)
 
-    pygame.display.flip()
+        mouse_pos = pygame.Vector2(pygame.mouse.get_pos())
 
+        update_all_boids(boids, dt, mouse_pos, is_attracted)
+        draw_all_boids(boids, screen, is_attracted)
+
+        # Calculate and draw FPS
+        fps = clock.get_fps()
+        fps_text = font.render(f"FPS: {fps:.2f}", True, BLACK)
+        screen.blit(fps_text, (10, 10))
+
+        # Draw boid count
+        boid_count_text = font.render(f"Boids: {len(boids)}", True, BLACK)
+        screen.blit(boid_count_text, (10, 50))
+
+        pygame.display.flip()
+
+
+run_game()
 pygame.quit()
